@@ -1,16 +1,20 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchRecipe } from "../services/api";
-import ReactHtmlParser from "react-html-parser";
 import AccordianHolder from "../components/AccordianHolder";
 import RecipeInfoCard from "../components/AdditionalRecipeInfoCard";
-import HtmlParser from "react-html-parser";
+import DeleteModal from "../components/DeleteModal";
+import { deleteRecipe } from "../services/api";
+import SuccessToastMessage from "../components/SuccessToastMessage";
 
 function SingleRecipe() {
     const params = useParams();         // Gets parameter setup in <Route path=""/> 
     const [recipe, setRecipe] = useState();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [showSuccessToastMsg, setShowSuccessToastMsg] = useState(false);
+    const [toastKey, setToastKey] = useState(0);
 
     useEffect(() => {
         const loadRecipe = async () => {
@@ -27,6 +31,21 @@ function SingleRecipe() {
         
         loadRecipe();
     }, [params.recipeID]);      // Monitoring for any changes to recipeID 
+
+    const handleDelete = () => {
+        try {
+            deleteRecipe(recipe.id).then(data => {
+                if (data.isDeleted) {
+                    setOpenDeleteModal(false);
+                    setShowSuccessToastMsg(true);
+                    setToastKey(prevKey => prevKey + 1);
+                    console.log(`Data Successfully deleted`);
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    }
     
     const loadingHTML = <div className="text-center text-4xl">Getting Recipe...</div>
     const recipeHTML = recipe && ( <>
@@ -66,13 +85,28 @@ function SingleRecipe() {
         {loading ? loadingHTML : recipeHTML}
 
         <div className=" flex justify-center items-center gap-3 my-3">
-            <button className="bg-red-500 text-xl text-white py-1 px-2 rounded-xl hover:bg-black">
+            <button onClick={() => setOpenDeleteModal(true)} className="bg-red-500 text-xl text-white py-1 px-2 rounded-xl hover:bg-black">
                     Delete
             </button>
             <button className="bg-gray-500 text-xl text-white py-1 px-4 rounded-xl hover:bg-black">
                 Edit
             </button>
         </div>
+
+        <DeleteModal openModal={openDeleteModal} closeModal={() => setOpenDeleteModal(false)}>
+            <img className="mx-auto" width="50" height="50" src="https://img.icons8.com/fluency-systems-filled/48/filled-trash.png" alt="filled-trash"/>
+            <div className="text-center mx-auto w-48 my-4">
+                <h3 className="text-xl font-black text-gray-800">Confirm Delete</h3>
+                <p className="text-gray-600">Are you sure you want to delete this recipe?</p>
+            </div>
+            <div className="flex gap-4">
+                <button onClick={handleDelete} className="shadow rounded-xl text-lg bg-red-300 hover:bg-red-600 hover:text-white w-full">Delete</button>
+                <button onClick={() => setOpenDeleteModal(false)} className="shadow rounded-xl text-lg bg-white hover:bg-blue-500 hover:text-white w-full">Cancel</button>
+            </div>
+        </DeleteModal>
+
+        {showSuccessToastMsg && <SuccessToastMessage message="Recipe successfully Deleted!" key={toastKey} onClose={() => setShowSuccessToastMsg(false)} />}
+
         </>
     )
 }
