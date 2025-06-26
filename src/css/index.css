@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+body {
+    font-family: Lucida;
+    background-color: oklch(0.941 0.03 12.58);
+}
+
+button {
+    cursor: pointer;
+}
